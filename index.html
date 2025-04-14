@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Social Sustainability Score in Historical Public Space</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #D9D9D9;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+      color: #333;
+    }
+    button, #uploadBtn {
+      background-color: #444;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 200px;
+      margin: 10px 10px 10px 0;
+      border: none;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sonuc-kutu {
+      margin-top: 30px;
+      padding: 20px;
+      text-align: center;
+      font-size: 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      color: white;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+    .download-section {
+      margin-top: 20px;
+      background: #f5f5f5;
+      padding: 20px;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+    }
+    .download-section a {
+      color: #444;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .download-section a:hover {
+      text-decoration: underline;
+    }
+  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Social Sustainability Score in Historical Public Space</h2>
+    <button onclick="document.getElementById('excelFile').click()" id="uploadBtn">📁 Upload Excel</button>
+    <input type="file" id="excelFile" accept=".xlsx" style="display:none">
+    <button onclick="indirCSV()" id="csvBtn" disabled>📄 Download CSV</button>
+    <button onclick="indirPDF()" id="pdfBtn" disabled>🖨️ Download PDF</button>
+
+    <div class="download-section">
+      <p><strong>📄 Download Template:</strong></p>
+      <a href="template.xlsx" download>Download Excel Template</a>
+      <p style="margin-top:5px; font-size: 14px;">Please use this template to prepare your survey data. Ensure all columns match the question codes exactly.</p>
+    </div>
+
+    <div id="sonucKutusu"></div>
+    <table id="sonuclar"></table>
+    <canvas id="chartCanvas" width="800" height="300"></canvas>
+  </div>
+
+  <script>
+const yukler = {
+  CS6: 0.572, QoE2: 0.68, M5: 0.698, M3: 0.602, QoE1: 0.756, M7: 0.743, M6: 0.682,
+  CS7: 0.673, CS11: 0.782, QoE4: 0.716, CS5: 0.683, CS1: 0.693, CS9: 0.672, CS8: 0.646,
+  SHE2: 0.587, SHE1: 0.614, QoE5: 0.648, M1: 0.487, QoE14: 0.779, QoE15: 0.709,
+  QoE13: 0.738, CS4: 0.702, CS2: 0.723, CS3: 0.804, CS12: 0.616, CI4: 0.84,
+  CI3: 0.815, CH2: 0.964, CI2: 0.775, CS13: 0.772, CI1: 0.903, QoE12: 0.637,
+  QoE11: 0.558, QoE6: 0.67, QoE10: 0.733
+};
+
+let rows = [['Region', 'Participant Count', 'Total Weighted Score', 'Normalized Score', 'Category']];
+
+let chart;
+
+document.getElementById('excelFile').addEventListener('change', function(e) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: 'array'});
+    rows = [['Region', 'Participant Count', 'Total Weighted Score', 'Normalized Score', 'Category']];
+
+    const min = 24.672;
+    const max = 123.36;
+    const chartLabels = [];
+    const chartData = [];
+    const barColors = [];
+
+    for (const sheetName of workbook.SheetNames) {
+      console.log('Processing sheet:', sheetName);
+      const sheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+      const kodlar = json[0].slice(1, 36);
+      const cevaplar = json.slice(1).filter(row => row[1] != null);
+
+      let toplamlar = [];
+      for (let i = 0; i < cevaplar.length; i++) {
+        let satir = cevaplar[i];
+        let toplam = 0;
+        for (let j = 0; j < kodlar.length; j++) {
+          let kod = kodlar[j];
+          let cevap = Number(satir[j + 1]);
+          if (!isNaN(cevap) && yukler[kod]) {
+            toplam += cevap * yukler[kod];
+          }
+        }
+        toplamlar.push(toplam);
+      }
+
+      let ortalamaToplam = toplamlar.reduce((a, b) => a + b, 0) / toplamlar.length;
+      let normalize = ((ortalamaToplam - min) / (max - min)) * 4 + 1;
+      let kategori = normalize <= 2.83 ? 'Poor' : normalize <= 3.65 ? 'Moderate' : 'Good';
+      console.log(`Region: ${sheetName}, Participants: ${cevaplar.length}, Normalized: ${normalize.toFixed(2)}, Category: ${kategori}`);
+
+      rows.push([sheetName, cevaplar.length, ortalamaToplam.toFixed(2), normalize.toFixed(2), kategori]);
+      chartLabels.push(sheetName);
+      chartData.push(normalize.toFixed(2));
+      barColors.push(kategori === 'Good' ? '#51731F' : kategori === 'Moderate' ? '#fbc02d' : '#e53935');
+    }
+
+    const table = document.getElementById('sonuclar');
+    table.innerHTML = rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+
+    const box = document.getElementById("sonucKutusu");
+    box.className = "sonuc-kutu";
+    const lastKategori = rows.at(-1)[4];
+    box.style.backgroundColor = '#444';
+    box.textContent = 'Comparison completed for ' + (rows.length - 1) + ' region(s).';
+
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('chartCanvas'), {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Normalized Score by Region',
+          data: chartData,
+          backgroundColor: barColors
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 5 } }
+      }
+    });
+
+    document.getElementById("csvBtn").disabled = false;
+    document.getElementById("pdfBtn").disabled = false;
+  };
+  reader.readAsArrayBuffer(e.target.files[0]);
+});
+
+function indirCSV() {
+  let csv = rows.map(r => r.join(',')).join('\n');
+
+  let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'results.csv';
+  link.click();
+}
+
+function indirPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const date = new Date().toLocaleDateString();
+  doc.setFontSize(18);
+  doc.setTextColor(33, 37, 41);
+  doc.text("Social Sustainability Score in Historical Public Space", 20, 20);
+
+  doc.setFontSize(12);
+  doc.text(`Date: ${date}`, 20, 30);
+  doc.text("Project: Historical Public Space Assessment", 20, 40);
+  doc.line(20, 45, 190, 45);
+
+  doc.autoTable({
+    head: [[`Comparison completed for ${rows.length - 1} region(s).`]],
+    body: [],
+    theme: 'grid',
+    startY: 55,
+    headStyles: { fillColor: [68, 68, 68], textColor: 255, halign: 'center' }
+  });
+
+  doc.autoTable({
+    head: [rows[0]],
+    body: rows.slice(1),
+    startY: doc.lastAutoTable.finalY + 10,
+    styles: { halign: 'center' },
+    headStyles: { fillColor: [240, 240, 240], textColor: 0 }
+  });
+
+  const canvas = document.getElementById('chartCanvas');
+  const image = canvas.toDataURL('image/png', 1.0);
+  const chartY = doc.lastAutoTable.finalY + 10;
+  doc.addImage(image, 'PNG', 20, chartY, 170, 70);
+
+  const endY = chartY + 80;
+  doc.setFontSize(10);
+  doc.text("This report was generated automatically based on the uploaded survey data.", 20, endY);
+  doc.text("Prepared using the Social Sustainability in Historical Public Spaces Web Tool.", 20, endY + 6);
+
+  doc.save("social_sustainability_report.pdf");
+}
+</script>
