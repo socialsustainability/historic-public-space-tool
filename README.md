@@ -1,38 +1,62 @@
-# Social Sustainability Score Calculator for Historical Public Spaces
+Social Sustainability Score Calculator for Historical Public Spaces
 
-This web-based tool allows urban researchers and local authorities to compute social sustainability scores for historical public spaces using standardized Excel survey data.
+This web-based tool enables urban researchers and local authorities to compute social sustainability scores for historical public spaces using standardized Excel survey data.
 
-## 🔍 What It Does
+🔍 What It Does
 
-- 📊 Calculates weighted scores using standardized factor loadings
-- ⚖️ Normalizes scores and assigns categories (Good, Moderate, Poor)
-- 📈 Visualizes results with bar charts
-- 🧾 Exports findings to PDF and CSV
+📊 Calculates weighted scores using standardized factor loadings
 
-## 📝 How to Use
+⚖️ Normalizes scores and assigns categories (Good, Moderate, Poor)
 
-1. Download the Excel template.
-2. Fill in survey responses for each participant.
-3. Upload your file using the **Upload Excel** button.
-4. View the results, graph, and download outputs.
+📈 Visualizes results with bar charts
 
-## 📦 Output Formats
+🗞️ Includes factor-level scoring with individual min-max normalization
 
-- CSV file with regional scores
-- PDF report including:
-  - Region summaries
-  - Score table
-  - Bar chart
-  - Evaluation note
+📑 Exports findings to PDF and CSV
 
-## 🌐 Technologies
+📅 How to Use
 
-- HTML + JavaScript
-- Chart.js for visualization
-- jsPDF for PDF export
-- SheetJS (xlsx) for Excel parsing
+Download the provided Excel template.
 
----
+Fill in survey responses for each participant.
 
-**Developed by:** [Buse AÇIK ETİKE & Derya SÖKMEN KÖK / Adana Alparslan Turkes Science and Technology University]  
-**License:** ATU  
+Upload your file using the Upload Excel button.
+
+View the overall score table and factor-based results.
+
+Export outputs using the CSV or PDF buttons.
+
+📆 Output Formats
+
+CSV file containing:
+
+Region-level weighted and normalized scores
+
+Category classifications
+
+PDF report including:
+
+Summary table of all regions
+
+Factor-level tables per region
+
+Color-coded bar chart
+
+Timestamped metadata
+
+🌐 Technologies
+
+HTML + CSS + JavaScript
+
+Chart.js for data visualization
+
+SheetJS for reading Excel files
+
+jsPDF & AutoTable for PDF generation
+
+✍️ Credits
+
+Developed by: [Your Name or Institution]License: MIT
+
+Note: For accurate scoring, always use the provided Excel template. Ensure factor codes and column positions remain unchanged.
+
