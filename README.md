@@ -5,15 +5,15 @@ This web-based tool enables urban researchers and local authorities to compute s
 
 🔍 What It Does
 
-📊 Calculates weighted scores using standardized factor loadings
+	📊 Calculates weighted scores using standardized factor loadings
 
-⚖️ Normalizes scores and assigns categories (Good, Moderate, Poor)
+	⚖️ Normalizes scores and assigns categories (Good, Moderate, Poor)
 
-📈 Visualizes results with bar charts
+	📈 Visualizes results with bar charts
 
-🗞️ Includes factor-level scoring with individual min-max normalization
+	🗞️ Includes factor-level scoring with individual min-max normalization
 
-📑 Exports findings to PDF and CSV
+	📑 Exports findings to PDF and CSV
 
 
 📅 How to Use
