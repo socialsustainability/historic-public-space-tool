@@ -6,6 +6,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -49,6 +50,7 @@
       border-radius: 8px;
       font-weight: bold;
       color: white;
+      background-color: #444;
     }
     table {
       width: 100%;
@@ -82,7 +84,6 @@
       text-decoration: underline;
     }
   </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -101,9 +102,9 @@
     <div id="sonucKutusu"></div>
     <table id="sonuclar"></table>
     <canvas id="chartCanvas" width="800" height="300"></canvas>
+    <div id="faktorSonuclari"></div>
   </div>
-
-  <script>
+<script>
 const yukler = {
   CS6: 0.572, QoE2: 0.68, M5: 0.698, M3: 0.602, QoE1: 0.756, M7: 0.743, M6: 0.682,
   CS7: 0.673, CS11: 0.782, QoE4: 0.716, CS5: 0.683, CS1: 0.693, CS9: 0.672, CS8: 0.646,
@@ -113,8 +114,17 @@ const yukler = {
   QoE11: 0.558, QoE6: 0.67, QoE10: 0.733
 };
 
-let rows = [['Region', 'Participant Count', 'Total Weighted Score', 'Normalized Score', 'Category']];
+const faktorler = {
+  'F1 - Historic Environment': ['M7','M6','QoE1','QoE2','M3','M5','CS6'],
+  'F2 - Social Stability & Equality': ['SHE1','SHE2','CS9','CS8','CS1','CS5','CS11','QoE4','CS7'],
+  'F3 - Infrastructure & Inclusivity': ['QoE13','QoE15','QoE14','M1','QoE5'],
+  'F4 - Participation & Democracy': ['CS4','CS3','CS2','CS12'],
+  'F5 - Spatial Harmony': ['CI4','CI3','CH2'],
+  'F6 - Social Capital': ['CI2','CS13','CI1'],
+  'F7 - Environment & Accessibility': ['QoE12','QoE11','QoE6','QoE10']
+};
 
+let rows = [['Region', 'Participant Count', 'Total Weighted Score', 'Normalized Score', 'Category']];
 let chart;
 
 document.getElementById('excelFile').addEventListener('change', function(e) {
@@ -129,9 +139,9 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
     const chartLabels = [];
     const chartData = [];
     const barColors = [];
+    let faktorSonuclarHTML = '';
 
     for (const sheetName of workbook.SheetNames) {
-      console.log('Processing sheet:', sheetName);
       const sheet = workbook.Sheets[sheetName];
       const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
       const kodlar = json[0].slice(1, 36);
@@ -154,20 +164,52 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
       let ortalamaToplam = toplamlar.reduce((a, b) => a + b, 0) / toplamlar.length;
       let normalize = ((ortalamaToplam - min) / (max - min)) * 4 + 1;
       let kategori = normalize <= 2.83 ? 'Poor' : normalize <= 3.65 ? 'Moderate' : 'Good';
-      console.log(`Region: ${sheetName}, Participants: ${cevaplar.length}, Normalized: ${normalize.toFixed(2)}, Category: ${kategori}`);
 
       rows.push([sheetName, cevaplar.length, ortalamaToplam.toFixed(2), normalize.toFixed(2), kategori]);
       chartLabels.push(sheetName);
       chartData.push(normalize.toFixed(2));
       barColors.push(kategori === 'Good' ? '#51731F' : kategori === 'Moderate' ? '#fbc02d' : '#e53935');
+
+      faktorSonuclarHTML += `<h3>${sheetName} - Factor-Based Scores</h3><table><tr><th>Factor</th><th>Weighted Avg</th><th>Normalized</th><th>Category</th></tr>`;
+
+      for (const [isim, kodlarF] of Object.entries(faktorler)) {
+        let faktorToplamlar = cevaplar.map(satir => {
+          return kodlarF.reduce((acc, kod) => {
+            let index = kodlar.indexOf(kod);
+            if (index !== -1) {
+              let cevap = Number(satir[index + 1]);
+              if (!isNaN(cevap)) {
+                acc += cevap * yukler[kod];
+              }
+            }
+            return acc;
+          }, 0);
+        });
+
+        let faktorOrtalama = faktorToplamlar.reduce((a,b)=>a+b,0)/faktorToplamlar.length;
+        const faktorMinMax = {
+  'F1 - Historic Environment': {min: 4.733, max: 23.665},
+  'F2 - Social Stability & Equality': {min: 6.066, max: 30.33},
+  'F3 - Infrastructure & Inclusivity': {min: 3.361, max: 16.805},
+  'F4 - Participation & Democracy': {min: 2.845, max: 14.225},
+  'F5 - Spatial Harmony': {min: 2.619, max: 13.095},
+  'F6 - Social Capital': {min: 2.45, max: 12.25},
+  'F7 - Environment & Accessibility': {min: 2.598, max: 12.99}
+};
+const {min: fMin, max: fMax} = faktorMinMax[isim];
+let faktorNorm = ((faktorOrtalama - fMin) / (fMax - fMin)) * 4 + 1;
+        let faktorKategori = faktorNorm <= 2.83 ? 'Poor' : faktorNorm <= 3.65 ? 'Moderate' : 'Good';
+
+        faktorSonuclarHTML += `<tr><td>${isim}</td><td>${faktorOrtalama.toFixed(2)}</td><td>${faktorNorm.toFixed(2)}</td><td>${faktorKategori}</td></tr>`;
+      }
+      faktorSonuclarHTML += '</table>';
     }
 
-    const table = document.getElementById('sonuclar');
-    table.innerHTML = rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+    document.getElementById("sonuclar").innerHTML = rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
 
     const box = document.getElementById("sonucKutusu");
-    box.className = "sonuc-kutu";
     const lastKategori = rows.at(-1)[4];
+    box.className = "sonuc-kutu";
     box.style.backgroundColor = '#444';
     box.textContent = 'Comparison completed for ' + (rows.length - 1) + ' region(s).';
 
@@ -190,59 +232,45 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
 
     document.getElementById("csvBtn").disabled = false;
     document.getElementById("pdfBtn").disabled = false;
+    document.getElementById("faktorSonuclari").innerHTML = faktorSonuclarHTML;
   };
   reader.readAsArrayBuffer(e.target.files[0]);
 });
-
-function indirCSV() {
-  let csv = rows.map(r => r.join(',')).join('\n');
-
-  let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  let link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'results.csv';
-  link.click();
-}
-
+</script>
+<script>
 function indirPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const date = new Date().toLocaleDateString();
+
   doc.setFontSize(18);
-  doc.setTextColor(33, 37, 41);
   doc.text("Social Sustainability Score in Historical Public Space", 20, 20);
-
-  doc.setFontSize(12);
-  doc.text(`Date: ${date}`, 20, 30);
-  doc.text("Project: Historical Public Space Assessment", 20, 40);
-  doc.line(20, 45, 190, 45);
-
-  doc.autoTable({
-    head: [[`Comparison completed for ${rows.length - 1} region(s).`]],
-    body: [],
-    theme: 'grid',
-    startY: 55,
-    headStyles: { fillColor: [68, 68, 68], textColor: 255, halign: 'center' }
-  });
 
   doc.autoTable({
     head: [rows[0]],
     body: rows.slice(1),
-    startY: doc.lastAutoTable.finalY + 10,
-    styles: { halign: 'center' },
-    headStyles: { fillColor: [240, 240, 240], textColor: 0 }
+    startY: 30
   });
 
-  const canvas = document.getElementById('chartCanvas');
-  const image = canvas.toDataURL('image/png', 1.0);
-  const chartY = doc.lastAutoTable.finalY + 10;
-  doc.addImage(image, 'PNG', 20, chartY, 170, 70);
+  let finalY = doc.lastAutoTable.finalY + 10;
 
-  const endY = chartY + 80;
-  doc.setFontSize(10);
-  doc.text("This report was generated automatically based on the uploaded survey data.", 20, endY);
-  doc.text("Prepared using the Social Sustainability in Historical Public Spaces Web Tool.", 20, endY + 6);
+  const faktorTables = document.querySelectorAll('#faktorSonuclari table');
+  faktorTables.forEach((table, i) => {
+    const title = document.querySelectorAll('#faktorSonuclari h3')[i].textContent;
+    doc.text(title, 20, finalY + 10);
+    doc.autoTable({
+      html: table,
+      startY: finalY + 15,
+      theme: 'grid'
+    });
+    finalY = doc.lastAutoTable.finalY + 10;
+  });
+
+  const chartCanvas = document.getElementById('chartCanvas');
+  const chartImage = chartCanvas.toDataURL('image/png', 1.0);
+  doc.addImage(chartImage, 'PNG', 20, finalY, 170, 70);
 
   doc.save("social_sustainability_report.pdf");
 }
 </script>
+</body>
+</html>
