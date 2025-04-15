@@ -18,50 +18,50 @@ This web-based tool enables urban researchers and local authorities to compute s
 
 📅 How to Use
 
-  Download the provided Excel template.
+	Download the provided Excel template.
 
-  Fill in survey responses for each participant.
+	Fill in survey responses for each participant.
 
-  Upload your file using the Upload Excel button.
+	Upload your file using the Upload Excel button.
 
-  View the overall score table and factor-based results.
+	View the overall score table and factor-based results.
 
-  Export outputs using the CSV or PDF buttons.
+	Export outputs using the CSV or PDF buttons.
 
 
 📆 Output Formats
 
-  CSV file containing:
+	CSV file containing:
 
-  Region-level weighted and normalized scores
+	Region-level weighted and normalized scores
 
-  Category classifications
+	Category classifications
 
-  PDF report including:
+	PDF report including:
 
-  Summary table of all regions
+	Summary table of all regions
 
-  Factor-level tables per region
+	Factor-level tables per region
 
-  Color-coded bar chart
+	Color-coded bar chart
 
-  Timestamped metadata
+	Timestamped metadata
 
 
 🌐 Technologies
 
-  HTML + CSS + JavaScript
+	HTML + CSS + JavaScript
 
-  Chart.js for data visualization
+	Chart.js for data visualization
 
-  SheetJS for reading Excel files
+	SheetJS for reading Excel files
 
-  jsPDF & AutoTable for PDF generation
+	jsPDF & AutoTable for PDF generation
 
 
 ✍️ Credits
 
-  Developed by: [Assist. Prof. Dr. Buse AÇIK ETİKE, Assist. Prof. Dr. Derya SÖKMEN KÖK - Adana Alparslan Turkes Science and Technology University]License: ATU
+	Developed by: [Assist. Prof. Dr. Buse AÇIK ETİKE, Assist. Prof. Dr. Derya SÖKMEN KÖK - Adana Alparslan Turkes Science and Technology University]License: ATU
 
-  Note: For accurate scoring, always use the provided Excel template. Ensure factor codes and column positions remain unchanged.
+	Note: For accurate scoring, always use the provided Excel template. Ensure factor codes and column positions remain unchanged.
 
